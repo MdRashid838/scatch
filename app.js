@@ -35,3 +35,10 @@ app.use("/products", productsRouter);
 app.listen(1000 , function(){
     console.log("server is running");
 })
+
+
+
+// this command to check current enviroment  "console.log(process.env.NODE_ENV)"
+// setup new environment variable  = "$env:NODE_ENV="development""
+// Remove-Item Env:NODE_ENV
+//  for setup debug command  $env:DEBUG="development:*"

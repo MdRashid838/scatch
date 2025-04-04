@@ -14,6 +14,7 @@ module.exports = async function (req, resp, next) {
       .select("-password");
     req.user = user;
     next();
+    // resp.render("/shop")
   } catch (err) {
     resp.flash("error", "something went wrong.");
     resp.redirect("/");
