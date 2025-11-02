@@ -32,8 +32,12 @@ app.use("/owners", ownersRouter);
 app.use("/users", usersRouter);
 app.use("/products", productsRouter);
 
-app.listen(1000 , function(){
-    console.log("server is running");
+// 1. Define the port, prioritizing the Render-provided PORT environment variable
+const port = process.env.PORT || 1000;
+
+// 2. Pass the 'port' variable to app.listen()
+app.listen(port , function(){
+    console.log(`server is running on port ${port}`); // Optional: update the log message
 })
 
 
