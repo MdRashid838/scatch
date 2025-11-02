@@ -15,6 +15,7 @@ module.exports = async function (req, resp, next) {
     req.user = user;
     next();
     // resp.render("/shop")
+    // resp.send("/shop");
   } catch (err) {
     resp.flash("error", "something went wrong.");
     resp.redirect("/");
