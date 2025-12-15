@@ -11,7 +11,7 @@ const indexRouter = require("./routes/index");
 
 const flash = require("connect-flash");
 const session = require("express-session");
-const MongoStore = require("connect-mongo")(session); // ✅ ADD
+const MongoStore = require("connect-mongo"); // ✅ ADD
 require("dotenv").config();
 
 /* =========================
