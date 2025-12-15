@@ -4,38 +4,65 @@ const isLoggedin = require("../middlewares/isLoggedin");
 const Product = require("../models/product-model");
 const User = require("../models/user-model");
 
-router.get("/", (req, resp) => {
+// HOME
+router.get("/", (req, res) => {
   const error = req.flash("error");
-  resp.render("index", { error, loggedin: false });
+  res.json({
+    message: "API running 🚀",
+    error,
+    loggedin: false,
+  });
 });
 
-router.get("/shop", isLoggedin, async (req, resp) => {
+// SHOP
+router.get("/shop", isLoggedin, async (req, res) => {
   const products = await Product.find();
   const success = req.flash("success");
-  resp.render("shop", { products, success });
+
+  res.json({
+    products,
+    success,
+  });
 });
 
-router.get("/cart", isLoggedin, async (req, resp) => {
+// CART
+router.get("/cart", isLoggedin, async (req, res) => {
   const user = await User.findOne({ email: req.user.email }).populate("cart");
+
   let bill = 0;
   if (user.cart.length > 0) {
-    bill = user.cart.reduce((acc, item) => acc + (item.price - (item.discount || 0)), 20);
+    bill = user.cart.reduce(
+      (acc, item) => acc + (item.price - (item.discount || 0)),
+      20
+    );
   }
-  resp.render("cart", { user, bill });
+
+  res.json({
+    user,
+    bill,
+  });
 });
 
-router.get("/addtocart/:productid", isLoggedin, async (req, resp) => {
+// ADD TO CART
+router.post("/addtocart/:productid", isLoggedin, async (req, res) => {
   const user = await User.findOne({ email: req.user.email });
   user.cart.push(req.params.productid);
   await user.save();
-  req.flash("success", "Added to cart successfully!");
-  resp.redirect("/shop");
+
+  res.json({
+    success: true,
+    message: "Added to cart successfully!",
+  });
 });
 
-router.get("/logout", isLoggedin, (req, resp) => {
-  resp.clearCookie("token");
-  req.flash("success", "Logged out successfully!");
-  resp.redirect("/");
+// LOGOUT
+router.post("/logout", isLoggedin, (req, res) => {
+  res.clearCookie("token");
+
+  res.json({
+    success: true,
+    message: "Logged out successfully!",
+  });
 });
 
 module.exports = router;
