@@ -11,6 +11,7 @@ const indexRouter = require("./routes/index");
 
 const flash = require("connect-flash");
 const session = require("express-session");
+const MongoStore = require("connect-mongo"); // ✅ ADD
 require("dotenv").config();
 
 /* =========================
@@ -36,12 +37,22 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
+/* =========================
+   SESSION (FIXED ✅)
+========================= */
 app.use(
   session({
     name: "scatch-session",
     secret: process.env.EXPRESS_SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
+
+    // ✅ SESSION AB MONGODB ME STORE HOGA
+    store: MongoStore.create({
+      mongoUrl: process.env.MONGODB_URI,
+      collectionName: "sessions",
+    }),
+
     cookie: {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
