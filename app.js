@@ -36,8 +36,8 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 // ✅ Static & Views
-app.use(express.static(path.join(__dirname, "public")));
-app.set("view engine", "ejs");
+// app.use(express.static(path.join(__dirname, "public")));
+// app.set("view engine", "ejs");
 
 // ✅ Routers
 app.use("/", indexRouter);
