@@ -1,25 +1,40 @@
 const express = require("express");
 const router = express.Router();
 const upload = require("../config/multer-config");
-const productModel = require("../models/product-models")
+const Product = require("../models/product-model");
 
-router.post("/create", upload.single("image"), async function (req, resp) {
-    try {
-        let { name, price, discount, bgcolor, panelcolor, textcolor, } = req.body;
-        let products = await productModel.create({
-            image: req.file.buffer,
-            name,
-            price,
-            discount,
-            bgcolor,
-            panelcolor,
-            textcolor,
-        })
-        resp.flash("success", "Product created successfully.")
-        resp.redirect("/owners/admin");
-    } catch (err) {
-        resp.send(err.massage);
+// ✅ Create product route
+router.post("/create", upload.single("image"), async (req, res) => {
+  try {
+    const { name, price, discount, bgcolor, panelcolor, textcolor } = req.body;
+
+    if (!name || !price) {
+      return res.status(400).send("Name and price are required.");
     }
-})
+
+    const product = await Product.create({
+      image: req.file?.buffer,
+      name,
+      price,
+      discount,
+      bgcolor,
+      panelcolor,
+      textcolor,
+    });
+
+    if (typeof req.flash === "function") {
+      req.flash("success", "Product created successfully.");
+    }
+
+    if (req.headers.accept?.includes("application/json")) {
+      return res.status(201).json({ success: true, product });
+    }
+
+    res.redirect("/owners/admin");
+  } catch (err) {
+    console.error("Error creating product:", err);
+    res.status(500).send(err.message || "Something went wrong");
+  }
+});
 
 module.exports = router;

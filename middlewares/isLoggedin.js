@@ -1,23 +1,31 @@
 const jwt = require("jsonwebtoken");
-const userModel = require("../models/user-models");
+const userModel = require("../models/user-model");
 
 module.exports = async function (req, resp, next) {
-  if (!req.cookies.token) {
-    resp.flash("error", "you need to login first");
+  const token = req.cookies?.token;
+
+  if (!token) {
+    req.flash("error", "You need to login first");
     return resp.redirect("/");
   }
 
   try {
-    let decoded = jwt.verify(req.cookies.token, process.env.JWT_KEY);
-    let user = await userModel
+    const decoded = jwt.verify(token, process.env.JWT_KEY);
+
+    const user = await userModel
       .findOne({ email: decoded.email })
       .select("-password");
+
+    if (!user) {
+      req.flash("error", "User not found, please login again");
+      return resp.redirect("/");
+    }
+
     req.user = user;
     next();
-    // resp.render("/shop")
-    // resp.send("/shop");
   } catch (err) {
-    resp.flash("error", "something went wrong.");
+    console.error("JWT verification error:", err.message);
+    req.flash("error", "Session expired or invalid token");
     resp.redirect("/");
   }
 };

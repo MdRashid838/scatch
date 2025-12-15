@@ -1,64 +1,67 @@
-const userModel = require("../models/user-models");
+const userModel = require("../models/user-model");
 const bcrypt = require("bcrypt");
-const jwt = require ("jsonwebtoken");
-const {generateToken} = require("../utils/generateToken")
+const jwt = require("jsonwebtoken");
+const { generateToken } = require("../utils/generateToken");
 
+module.exports.registerUser = async function (req, resp) {
+  try {
+    const { fullname, email, password } = req.body;
 
-module.exports.registerUser = async function (req, resp){
-    try{
-        let{ fullname,email, password } = req.body;
-
-        let user = await userModel.findOne({email:email});
-        if(user) {
-            return resp.status(401).send("you already have an account, please login")
-        };
-
-
-        bcrypt.genSalt(10, function(err,salt){
-            bcrypt.hash(password, salt, async function(err,hash){
-                if(err){ 
-                    return resp.send(err.massage)
-                }
-                else {
-                    let user = await userModel.create({
-                        fullname,
-                        email,
-                        password: hash,
-                    });
-                    let token = generateToken(user);
-                    resp.cookie("token", token);
-                    resp.send("user created successfully");
-                }
-            });
-        });
-       
+    const existingUser = await userModel.findOne({ email });
+    if (existingUser) {
+      return resp.status(400).send("User already exists, please login.");
     }
-    catch(err){
-        console.log(err)
-    }
-}
 
-module.exports.loginUser = async function(req, resp){
-    let {email ,password} = req.body;
+    const salt = await bcrypt.genSalt(10);
+    const hash = await bcrypt.hash(password, salt);
 
-    let user = await userModel.findOne({email:email});
-    if(!user){
-         return resp.send("Email or Password incorrect");
-        };
-
-    bcrypt.compare(password, user.password, function(err, result){
-        if(result){
-        let token = generateToken(user);
-        resp.cookie("token",token);
-        // resp.send("you can login");
-        resp.render("users/login/shop");
-    }else{
-        return resp.send("Email or Password incorrect")
-    }
+    const user = await userModel.create({
+      fullname,
+      email,
+      password: hash,
     });
+
+    const token = generateToken(user);
+    if (!token) return resp.status(500).send("Token generation failed");
+
+    resp.cookie("token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "none",
+    });
+    resp.status(201).send("User created successfully");
+  } catch (err) {
+    console.error(err);
+    resp.status(500).send("Internal Server Error");
+  }
 };
 
-module.exports.logoutUser = async function (req, resp){
-    resp.cookie("token", "");
-    resp.redirect("/");
-}
+module.exports.loginUser = async function (req, resp) {
+  try {
+    const { email, password } = req.body;
+    const user = await userModel.findOne({ email });
+
+    if (!user) return resp.status(401).send("Invalid email or password");
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) return resp.status(401).send("Invalid email or password");
+
+    const token = generateToken(user);
+    resp.cookie("token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "none",
+    });
+
+    // resp.render("users/login/shop"); // uncomment if using views
+    resp.status(200).send("Login successful");
+  } catch (err) {
+    console.error(err);
+    resp.status(500).send("Internal Server Error");
+  }
+};
+
+module.exports.logoutUser = async function (req, resp) {
+  resp.clearCookie("token");
+  resp.redirect("/");
+};

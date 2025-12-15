@@ -1,35 +1,58 @@
 const express = require("express");
 const router = express.Router();
-const ownerModel = require("../models/owner-models")
-// console.log(process.env.NODE_ENV)
+const bcrypt = require("bcrypt");
+const Owner = require("../models/owner-model");
 
-if(process.env.NODE_ENV ==="development"){
-    router.post("/create" , async function (req, resp){
-        let owners = await ownerModel.find();
-            if(owners.length > 0){
-                return resp
-                .status(503)
-                .send("You don't have permission to create a new owner.")
-            }
-            let {fullname, email, password} = req.body;
-            let createdOwner = await ownerModel.create({
-                fullname,
-                email,
-                password,
-            })
-            resp.status(201).send(createdOwner);
-    })
-}
+// ✅ Create new owner (allowed only in dev/setup)
+router.post("/create", async (req, res) => {
+  try {
+    if (process.env.NODE_ENV !== "development" && process.env.ALLOW_OWNER_SETUP !== "true") {
+      return res.status(403).send("Owner creation is disabled in this environment.");
+    }
 
-router.get("/admin" , function (req, resp){
-    let success = resp.flash("success");
-    resp.render("createproducts",{success});
-})
+    const existingOwners = await Owner.find();
+    if (existingOwners.length > 0) {
+      return res.status(409).send("Owner already exists.");
+    }
+
+    const { fullname, email, password } = req.body;
+    if (!fullname || !email || !password) {
+      return res.status(400).send("All fields (fullname, email, password) are required.");
+    }
+
+    const hash = await bcrypt.hash(password, 10);
+    const createdOwner = await Owner.create({ fullname, email, password: hash });
+    res.status(201).json(createdOwner);
+  } catch (error) {
+    console.error("Error creating owner:", error);
+    res.status(500).send("Server Error");
+  }
+});
+
+// ✅ Get all owners
+router.get("/", async (req, res) => {
+  try {
+    const owners = await Owner.find();
+    res.status(200).json(owners);
+  } catch (error) {
+    console.error("Error fetching owners:", error);
+    res.status(500).send("Error fetching owners");
+  }
+});
+
+// ✅ Delete all owners (dev only)
+router.delete("/delete-all", async (req, res) => {
+  try {
+    if (process.env.NODE_ENV !== "development" && process.env.ALLOW_OWNER_SETUP !== "true") {
+      return res.status(403).send("You don't have permission to delete owners in production.");
+    }
+
+    await Owner.deleteMany({});
+    res.status(200).send("All owners deleted successfully.");
+  } catch (error) {
+    console.error("Error deleting owners:", error);
+    res.status(500).send("Error deleting owners");
+  }
+});
+
 module.exports = router;
-
-
-
-// this command to check current enviroment  "console.log(process.env.NODE_ENV)"
-// setup new environment variable  = "$env:NODE_ENV="development""
-// Remove-Item Env:NODE_ENV
-// $env:DEBUG="development:*" for setup debug command
