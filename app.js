@@ -11,7 +11,7 @@ const indexRouter = require("./routes/index");
 
 const flash = require("connect-flash");
 const session = require("express-session");
-const MongoStore = require("connect-mongo"); // ✅ ADD
+const MongoStore = require("connect-mongo")(session); // ✅ ADD
 require("dotenv").config();
 
 /* =========================
@@ -48,7 +48,7 @@ app.use(
     saveUninitialized: false,
 
     // ✅ SESSION AB MONGODB ME STORE HOGA
-    store: MongoStore.create({
+    store: new MongoStore({
       mongoUrl: process.env.MONGODB_URI,
       collectionName: "sessions",
     }),
