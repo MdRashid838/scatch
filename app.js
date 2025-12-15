@@ -2,6 +2,7 @@ const express = require("express");
 const app = express();
 const cookieParser = require("cookie-parser");
 const path = require("path");
+const MongoStore = require("connect-mongo");
 const db = require("./config/mongoose.connection");
 
 const ownerRouter = require("./routes/ownersRouter");
@@ -11,7 +12,6 @@ const indexRouter = require("./routes/index");
 
 const flash = require("connect-flash");
 const session = require("express-session");
-const MongoStore = require("connect-mongo"); // ✅ ADD
 require("dotenv").config();
 
 /* =========================
@@ -47,9 +47,9 @@ app.use(
     resave: false,
     saveUninitialized: false,
 
-    // ✅ SESSION AB MONGODB ME STORE HOGA
-    store: new MongoStore({
-      mongoUrl: process.env.MONGODB_URI,
+    // ✅ EXISTING MONGOOSE CONNECTION USE HO RAHI HAI
+    store: MongoStore.create({
+      client: mongooseConnection.getClient(),
       collectionName: "sessions",
     }),
 
